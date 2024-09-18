@@ -6,6 +6,7 @@ import Paragraph from "../typography/Paragraph/Paragraph";
 
 
 
+
 interface IRegistrationInfo {
   linkText: string;
   hasAccountText: string;
@@ -31,7 +32,7 @@ const RegistrationInfo = ({
         <SignInButton
           children={
             <Link className="reg__link google-link" to="/">
-              <img src="..assets/img/google.svg" alt="Google" />
+              <img src="https://cdn-icons-png.flaticon.com/256/2875/2875404.png" alt="Google" />
             </Link>
           }
         />

@@ -36,4 +36,23 @@
     list-style-position: inside; 
 
   }
+
+  .delete-button {
+    margin-left: 20px; 
+    background-color: #ff4d4d;
+    color: white;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  
+    &:hover {
+      background-color: #ff1a1a;
+    }
+  
+    &:focus {
+      outline: none;
+    }
+  }
+  
   

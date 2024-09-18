@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react'; 
 import { fetchLyrics } from '../store/api/lyricsApi';
 import Dropdown from '../UI/Dropdown/Dropdown'; 
 import "../assets/main.scss";
@@ -14,15 +14,26 @@ const MainPage: React.FC = () => {
   const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState<{ text: string; userName: string }[]>([]);
-  const [favourites, setFavourites] = useState<string[]>(() => {
-    const savedFavourites = localStorage.getItem('favourites');
-    return savedFavourites ? JSON.parse(savedFavourites) : [];
-  });
+  const [comments, setComments] = useState<{ text: string; userName: string; userId: string; id: number }[]>([]);
+  const [editCommentId, setEditCommentId] = useState<number | null>(null);
+  const [favourites, setFavourites] = useState<string[]>([]);
 
   const navigate = useNavigate(); 
   const { user } = useUser(); 
 
+  useEffect(() => {
+    if (selectedArtist && selectedSong) {
+      const savedComments = localStorage.getItem(`comments_${selectedArtist.toLowerCase()}_${selectedSong.toLowerCase()}`);
+      setComments(savedComments ? JSON.parse(savedComments) : []);
+    }
+  }, [selectedArtist, selectedSong]);
+
+  useEffect(() => {
+    if (user) {
+      const savedFavourites = localStorage.getItem(`favourites_${user.id}`);
+      setFavourites(savedFavourites ? JSON.parse(savedFavourites) : []);
+    }
+  }, [user]);
 
   const performSearch = async () => {
     setError(null);
@@ -41,7 +52,6 @@ const MainPage: React.FC = () => {
     }
   };
 
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInput(value);
@@ -56,11 +66,24 @@ const MainPage: React.FC = () => {
     }
   };
 
-
   const handleCommentSubmit = () => {
-    if (comment.trim() && user) {
-      setComments([...comments, { text: comment.trim(), userName: user.firstName || 'Аноним' }]);
+    if (comment.trim() && selectedSong && selectedArtist && user) {
+      const newComment = {
+        text: comment.trim(),
+        userName: user.firstName || 'Аноним',
+        userId: user.id,
+        id: editCommentId !== null ? editCommentId : Date.now(), // Используем id для обновления
+      };
+
+      const updatedComments = editCommentId !== null
+        ? comments.map(c => (c.id === editCommentId ? newComment : c))
+        : [...comments, newComment];
+
+      setComments(updatedComments);
       setComment('');
+      setEditCommentId(null);
+
+      localStorage.setItem(`comments_${selectedArtist.toLowerCase()}_${selectedSong.toLowerCase()}`, JSON.stringify(updatedComments));
     }
   };
 
@@ -71,18 +94,56 @@ const MainPage: React.FC = () => {
     }
   };
 
-
   const handleAddToFavourites = () => {
+    if (!user) {
+      alert('Вы должны войти в систему для добавления песен в избранное.');
+      return;
+    }
+
     if (selectedSong && selectedArtist) {
-      const newFavourite = `${selectedArtist} - ${selectedSong}`;
-      const updatedFavourites = [...favourites, newFavourite];
-      setFavourites(updatedFavourites);
-      localStorage.setItem('favourites', JSON.stringify(updatedFavourites));
+      const newFavourite = `${selectedArtist} - ${selectedSong}`.toLowerCase(); // Приведение к нижнему регистру
+      const savedFavourites = localStorage.getItem(`favourites_${user.id}`);
+      const currentFavourites = savedFavourites ? JSON.parse(savedFavourites) : [];
+
+      const isDuplicate = currentFavourites.some(fav => 
+        fav.toLowerCase() === newFavourite
+      );
+
+      if (!isDuplicate) {
+        const updatedFavourites = [...currentFavourites, newFavourite];
+        setFavourites(updatedFavourites);
+        localStorage.setItem(`favourites_${user.id}`, JSON.stringify(updatedFavourites));
+        alert('Песня добавлена в избранное');
+      } else {
+        alert('Эта песня уже в избранном');
+      }
+    }
+  };
+
+  const handleEditComment = (id: number) => {
+    const commentToEdit = comments.find(c => c.id === id && c.userId === user?.id);
+    if (commentToEdit) {
+      setEditCommentId(id);
+      setComment(commentToEdit.text);
+    }
+  };
+
+  const handleDeleteComment = (id: number) => {
+    const commentToDelete = comments.find(c => c.id === id && c.userId === user?.id);
+    if (commentToDelete) {
+      const updatedComments = comments.filter(c => c.id !== id);
+      setComments(updatedComments);
+
+      if (selectedArtist && selectedSong) {
+        localStorage.setItem(`comments_${selectedArtist.toLowerCase()}_${selectedSong.toLowerCase()}`, JSON.stringify(updatedComments));
+      }
     }
   };
 
   useEffect(() => {
-    performSearch();
+    if (artist && title) {
+      performSearch();
+    }
   }, [artist, title]);
 
   return (
@@ -114,14 +175,19 @@ const MainPage: React.FC = () => {
               placeholder="Ваш комментарий..."
               onKeyDown={handleKeyDown}
             />
-
           </div>
           <div>
             <h2>Комментарии:</h2>
             <ul>
-              {comments.map((c, index) => (
-                <li key={index}>
+              {comments.map((c) => (
+                <li key={c.id}>
                   <strong>{c.userName}:</strong> {c.text}
+                  {user?.id === c.userId && ( 
+                    <>
+                      <button className='delete-button' onClick={() => handleEditComment(c.id)}>Редактировать</button>
+                      <button className='delete-button' onClick={() => handleDeleteComment(c.id)}>Удалить</button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
