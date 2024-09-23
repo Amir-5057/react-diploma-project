@@ -1,43 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import React, { useState} from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import "../assets/profile.scss";
 
 const ProfilePage: React.FC = () => {
-  const { user, isLoaded } = useUser();
-  const { client } = useClerk();
+  const { user,  } = useUser();
   const navigate = useNavigate();
   
-  const [profilePicture, setProfilePicture] = useState(user?.profileImageUrl || '');
-  const [name, setName] = useState(user?.firstName || '');
-  const [newProfilePicture, setNewProfilePicture] = useState<string>('');
-  const [newName, setNewName] = useState<string>('');
+  const [profilePicture, ] = useState(user?.profileImageUrl || '');
+  const [name, ] = useState(user?.firstName || '');
 
-  useEffect(() => {
-    if (!isLoaded || !user) {
-      navigate('/'); 
-    } else {
 
-      setProfilePicture(user.profileImageUrl || '');
-      setName(user.firstName || '');
-    }
-  }, [isLoaded, user, navigate]);
 
-  const handleSaveChanges = async () => {
-    try {
-
-      await client.updateUser({
-        firstName: newName || name,
-        profileImageUrl: newProfilePicture || profilePicture,
-      });
-      setName(newName || name);
-      setProfilePicture(newProfilePicture || profilePicture);
-      alert('Профиль обновлен!');
-    } catch (error) {
-      console.error('Ошибка обновления профиля:', error);
-      alert('Не удалось обновить профиль.');
-    }
-  };
+  
 
   return (
     <div className="profile-page">
@@ -55,6 +30,6 @@ const ProfilePage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ProfilePage;

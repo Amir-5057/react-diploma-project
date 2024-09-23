@@ -7,6 +7,20 @@ export interface IUser {
   city: string;
 }
 
+export interface IPost {
+  main_text: string;
+  user_id: number;
+  id: number;
+  reg_date: Date;
+  user_fk: IUser;
+  photos: [
+    {
+      photo_id: number;
+      photo_url: string;
+    }
+  ];
+  comments: string[];
+}
 
 export interface IGetUserResponse {
   status: number;

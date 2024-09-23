@@ -6,11 +6,12 @@ import type {
   IRegisterUserPayload,
   IRegisterUserResponse,
 } from "./types";
-import { baseUrl } from "../../utils/baseUrl";
+
+export const baseUrl = "http://161.35.153.209:5430/api"
 
 export const authApi = createApi({
   reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({ baseUrl }),
+  baseQuery: fetchBaseQuery({ baseUrl: baseUrl }),
   endpoints: (builder) => ({
     getUser: builder.query<IGetUserResponse, string>({
       query: (user_id) => `/user?user_id=${user_id}`,
